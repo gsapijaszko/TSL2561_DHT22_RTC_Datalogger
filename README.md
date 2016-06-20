@@ -8,7 +8,7 @@ Luminosity, Humidity and Temperature datalogger
 * minor changes 
 
 ##### Version 1.2
-* use of RealTimeClockDS1307.h https://github.com/davidhbrown/RealTimeClockDS1307/blob/master/README.md
+* use of RealTimeClockDS1307.h https://github.com/davidhbrown/RealTimeClockDS1307
 * code cleanup
 
 ##### Version 1.1
