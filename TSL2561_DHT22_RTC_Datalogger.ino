@@ -1,6 +1,6 @@
 
 // Compiled from Adafruit examples TSL2561, SD Data Logger and RealTimeClock1307 + DHT22
-// G. Sapijaszko, 19.05.2016, v. 1.2
+// G. Sapijaszko, 20.06.2016, v. 1.3
 
 #include <Adafruit_TSL2561_U.h>
 #include <Adafruit_Sensor.h>
@@ -134,16 +134,85 @@ void setup() {
   Serial.println("");
 
   // create a new file
-  char filename[] = "LOGGER00.CSV";  // Basic Filename
-    for (uint8_t i = 0; i < 100; i++) {
-      filename[6] = i / 10 + '0';
-      filename[7] = i % 10 + '0';
-      if (! SD.exists(filename)) {
-        // only open a new file if it doesn't exist
-        SensorData = SD.open(filename, FILE_WRITE);
-        break;  // leave the loop!
-      }
-    }
+  int dstart = 0;
+  int dlen = 0;
+  char tbuff[20];
+  char filename[] = "20YY0M0DHH0I0S.CSV";  // Basic Filename
+
+  // connect to RTC
+  Wire.begin();
+  RTC.readClock();
+  
+  dtostrf(RTC.getYear(),2,0,tbuff);
+  dstart = 2;//start of relplace
+  dlen = 2;
+  for (int i=0+dstart; i <= dstart+dlen-1; i++){
+    filename[i] = tbuff[i-dstart];
+  }
+  if(RTC.getMonth() > 9) {
+    dtostrf(RTC.getMonth(),2,0,tbuff);
+    dstart = 4;//start of relplace
+    dlen = 2;
+  }
+  else {
+    dtostrf(RTC.getMonth(),1,0,tbuff);
+    dstart = 5;//start of relplace
+    dlen = 1;
+  }
+  for (int i=0+dstart; i <= dstart+dlen-1; i++){
+    filename[i] = tbuff[i-dstart];
+  }
+  if(RTC.getDay() > 9) {
+    dtostrf(RTC.getDay(),2,0,tbuff);
+    dstart = 6;//start of relplace
+    dlen = 2;
+  }
+  else {
+    dtostrf(RTC.getDay(),1,0,tbuff);
+    dstart = 7;//start of relplace
+    dlen = 1;
+  }
+  for (int i=0+dstart; i <= dstart+dlen-1; i++){
+    filename[i] = tbuff[i-dstart];
+  }
+  dtostrf(RTC.getHours(),2,0,tbuff);
+  dstart = 8;//start of relplace
+  dlen = 2;
+  for (int i=0+dstart; i <= dstart+dlen-1; i++){
+    filename[i] = tbuff[i-dstart];
+  }
+  if(RTC.getMinutes() > 9) {
+    dtostrf(RTC.getMinutes(),2,0,tbuff);
+    dstart = 10;//start of relplace
+    dlen = 2;
+  }
+  else {
+    dtostrf(RTC.getMinutes(),1,0,tbuff);
+    dstart = 11;//start of relplace
+    dlen = 1;
+  }
+  for (int i=0+dstart; i <= dstart+dlen-1; i++){
+    filename[i] = tbuff[i-dstart];
+  }
+  if(RTC.getSeconds() > 9) {
+    dtostrf(RTC.getSeconds(),2,0,tbuff);
+    dstart = 12;//start of relplace
+    dlen = 2;
+  }
+  else {
+    dtostrf(RTC.getSeconds(),1,0,tbuff);
+    dstart = 13;//start of relplace
+    dlen = 1;
+  }
+  for (int i=0+dstart; i <= dstart+dlen-1; i++){
+    filename[i] = tbuff[i-dstart];
+  }
+ 
+  if (! SD.exists(filename)) {
+    // only open a new file if it doesn't exist
+    SensorData = SD.open(filename, FILE_WRITE);
+  }
+
     if (! SensorData) {
       error("couldnt create file");
     }
@@ -153,8 +222,6 @@ void setup() {
     Serial.println("-----------------------------------");
     digitalWrite(greenLEDpin, HIGH);  // Green light on
 
-    // connect to RTC
-    Wire.begin();
 }
 
 void loop() {
