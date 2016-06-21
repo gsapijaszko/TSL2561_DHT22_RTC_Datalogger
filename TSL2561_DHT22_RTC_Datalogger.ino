@@ -106,7 +106,7 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
-  Serial.print("Initializing SD card...");
+  Serial.println("Initializing SD card...");
   // see if the card is present and can be initialized:
   if (!SD.begin(chipSelect)) {
     Serial.println("Card failed, or not present");
@@ -133,15 +133,15 @@ void setup() {
   /* We're ready to go! */
   Serial.println("");
 
+  // connect to RTC
+  Wire.begin();
+  RTC.readClock();
+
   // create a new file
   int dstart = 0;
   int dlen = 0;
   char tbuff[20];
   char filename[] = "20YY0M0DHH0I0S.CSV";  // Basic Filename
-
-  // connect to RTC
-  Wire.begin();
-  RTC.readClock();
   
   dtostrf(RTC.getYear(),2,0,tbuff);
   dstart = 2;//start of relplace
@@ -210,26 +210,26 @@ void setup() {
  
   if (! SD.exists(filename)) {
     // only open a new file if it doesn't exist
+    SdFile::dateTimeCallback(dateTime);
     SensorData = SD.open(filename, FILE_WRITE);
   }
 
-    if (! SensorData) {
-      error("couldnt create file");
-    }
+  if (! SensorData) {
+    error("couldnt create file");
+  }
 
-    Serial.print(F("Logging data to: "));
-    Serial.println(filename);
-    Serial.println("-----------------------------------");
-    digitalWrite(greenLEDpin, HIGH);  // Green light on
-
+  Serial.print(F("Logging data to: "));
+  Serial.println(filename);
+  Serial.println("-----------------------------------");
+  digitalWrite(greenLEDpin, HIGH);  // Green light on
 }
 
 void loop() {
   delay(dht.getMinimumSamplingPeriod());
-    
+
   float humidity = dht.getHumidity();
   float temperature = dht.getTemperature();
-    
+
   Serial.print(dht.getStatusString());
   Serial.print("\t");
   Serial.print(humidity, 1);
@@ -287,3 +287,19 @@ void loop() {
   Serial.println(" Lux");
   Serial.println();
 }
+
+
+void dateTime(uint16_t* date, uint16_t* time) {
+//   RTC.readClock();
+   uint16_t year = 2000;
+   year = year+RTC.getYear();
+   Serial.print("Year: ");
+   Serial.println(year);
+   
+  // return date using FAT_DATE macro to format fields
+  *date = FAT_DATE(year, RTC.getMonth(), RTC.getDay());
+
+  // return time using FAT_TIME macro to format fields
+  *time = FAT_TIME(RTC.getHours(), RTC.getMinutes(), RTC.getSeconds());
+}
+
