@@ -83,16 +83,6 @@ uint32_t syncTime = 0; // time of last sync()
 
 #define WAIT_TO_START    0 // Wait for serial input in setup()
 
-void error(char *str){
-    Serial.print(F("error: "));
-    Serial.println(str);
-
-    // red LED indicates error
-    digitalWrite(redLEDpin, HIGH);
-
-    while (1);
- }
-
 File SensorData; // Data object to write sensor data to
 
 //=======================================================================
@@ -106,15 +96,15 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
-  Serial.println("Initializing SD card...");
+  Serial.println(F("Initializing SD card..."));
   // see if the card is present and can be initialized:
   if (!SD.begin(chipSelect)) {
-    Serial.println("Card failed, or not present");
+    Serial.println(F("Card failed, or not present"));
     // don't do anything more:
     return;
   }
-  Serial.println("card initialized.");
-  Serial.println(F("BME280-TSL2561 Data Logger"));
+  Serial.println(F("card initialized."));
+  Serial.println(F("DHT22, TSL2561 Data Logger"));
 
   pinMode(redLEDpin, OUTPUT); // debugging LED
   pinMode(greenLEDpin, OUTPUT); // debugging LED
@@ -135,12 +125,12 @@ void setup() {
   // connect to RTC
   Wire.begin();
   RTC.readClock();
-
+  
   // create a new file
   int dstart = 0;
   int dlen = 0;
   char tbuff[20];
-  char filename[] = "20YY0M0DHH0I0S.CSV";  // Basic Filename
+  char filename[] = "20YY0M0D0H0I0S.CSV";  // Basic Filename
   
   dtostrf(RTC.getYear(),2,0,tbuff);
   dstart = 2;//start of relplace
@@ -174,9 +164,16 @@ void setup() {
   for (int i=0+dstart; i <= dstart+dlen-1; i++){
     filename[i] = tbuff[i-dstart];
   }
-  dtostrf(RTC.getHours(),2,0,tbuff);
-  dstart = 8;//start of relplace
-  dlen = 2;
+  if(RTC.getHours() > 9) {
+    dtostrf(RTC.getHours(),2,0,tbuff);
+    dstart = 8;//start of relplace
+    dlen = 2;
+  }
+  else {
+    dtostrf(RTC.getHours(),1,0,tbuff);
+    dstart = 9;//start of relplace
+    dlen = 1;
+  }
   for (int i=0+dstart; i <= dstart+dlen-1; i++){
     filename[i] = tbuff[i-dstart];
   }
@@ -219,7 +216,7 @@ void setup() {
 
   Serial.print(F("Logging data to: "));
   Serial.println(filename);
-  Serial.println("-----------------------------------");
+  Serial.println(F("-----------------------------------"));
   digitalWrite(greenLEDpin, HIGH);  // Green light on
 }
 
@@ -228,14 +225,6 @@ void loop() {
 
   float humidity = dht.getHumidity();
   float temperature = dht.getTemperature();
-
-  Serial.print(dht.getStatusString());
-  Serial.print("\t");
-  Serial.print(humidity, 1);
-  Serial.print("\t\t");
-  Serial.print(temperature, 1);
-  Serial.print("\t\t");
-  Serial.println(dht.toFahrenheit(temperature), 1);
 
   // delay between readings
   delay((LOG_INTERVAL - 1) - (millis() % LOG_INTERVAL));
@@ -276,14 +265,14 @@ void loop() {
   SensorData.flush();
   digitalWrite(greenLEDpin, LOW);
 
-  Serial.print(formatted);
-  Serial.println();
+//  Serial.println(dht.getStatusString());
+  Serial.println(formatted);
   Serial.print(temperature);
-  Serial.println(" Degrees C");
+  Serial.println(F(" Degrees C"));
   Serial.print(humidity);
-  Serial.println(" % Relative Humidity");
+  Serial.println(F(" % Relative Humidity"));
   Serial.print(event.light);
-  Serial.println(" Lux");
+  Serial.println(F(" Lux"));
   Serial.println();
 }
 
@@ -292,13 +281,21 @@ void dateTime(uint16_t* date, uint16_t* time) {
 //   RTC.readClock();
    uint16_t year = 2000;
    year = year+RTC.getYear();
-   Serial.print("Year: ");
-   Serial.println(year);
    
   // return date using FAT_DATE macro to format fields
   *date = FAT_DATE(year, RTC.getMonth(), RTC.getDay());
 
   // return time using FAT_TIME macro to format fields
   *time = FAT_TIME(RTC.getHours(), RTC.getMinutes(), RTC.getSeconds());
+}
+
+void error(char *str){
+  Serial.print(F("error: "));
+  Serial.println(str);
+
+  // red LED indicates error
+  digitalWrite(redLEDpin, HIGH);
+
+  while (1);
 }
 
